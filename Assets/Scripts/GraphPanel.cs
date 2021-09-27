@@ -6,6 +6,8 @@ using UnityEngine.UI;
 
 public class GraphPanel : MonoBehaviour{
 
+    private int indexChart;
+
     [SerializeField] private Sprite dotSprite;
     private RectTransform graphContainer;
     private RectTransform labelTemplateX;
@@ -16,7 +18,18 @@ public class GraphPanel : MonoBehaviour{
 
     private List<GameObject> gameObjectList;
 
+    [SerializeField] Dropdown dropdown;
+    GameObject dropdowGameObject;
+
     private void Awake(){
+
+        dropdowGameObject = GameObject.Find("Dropdown");
+        dropdown = dropdowGameObject.GetComponent<Dropdown>();
+
+        dropdown.onValueChanged.AddListener(delegate {
+            DropdownValueChanged(dropdown);
+        });
+
         graphContainer = transform.Find("container").GetComponent<RectTransform>();
         labelTemplateX  = graphContainer.Find("labelTemplateX").GetComponent<RectTransform>();
         labelTemplateY  = graphContainer.Find("labelTemplateY").GetComponent<RectTransform>();
@@ -28,16 +41,59 @@ public class GraphPanel : MonoBehaviour{
         
         List<int> valueList = new 
             List<int>(){5,160,16,75,30,22,17,15,13,17,25,37,40,36,33,100, 22};
-        
-        ShowGraph(valueList, -1 ,(int _i) => "Day " + (_i + 1), (float _f) => "$" + Mathf.RoundToInt(_f));
+
+
+        IGraphVisual graphVisual;
+        switch (indexChart)
+        {
+
+            case 0:
+                graphVisual = new LineGraphVisual(graphContainer, dotSprite, Color.green, Color.white);
+                break;
+            case 1:
+                graphVisual = new BarChartVisual(graphContainer, Color.green, .7f);
+                break;
+            default:
+                Debug.Log(indexChart);
+                return;
+
+        }
+
+        ShowGraph(valueList, graphVisual,-1 ,(int _i) => "Day " + (_i + 1), (float _f) => "$" + Mathf.RoundToInt(_f));
 
 
     }
 
-    
+    void DropdownValueChanged(Dropdown change){
+
+        List<int> valueList = new
+            List<int>() { 5, 160, 16, 75, 30, 22, 17, 15, 13, 17, 25, 37, 40, 36, 33, 100, 22 };
+
+        IGraphVisual graphVisual;
+        switch (change.value)
+        {
+
+            case 0:
+                graphVisual = new LineGraphVisual(graphContainer, dotSprite, Color.green, Color.white);
+                break;
+            case 1:
+                graphVisual = new BarChartVisual(graphContainer, Color.green, .7f);
+                break;
+            default:
+                Debug.Log(indexChart);
+                return;
+
+        }
+
+        ShowGraph(valueList, graphVisual, -1, (int _i) => "Day " + (_i + 1), (float _f) => "$" + Mathf.RoundToInt(_f));
 
 
-    public void ShowGraph(List<int> list, int maxVisibleValueAmount = -1 ,Func<int, string> getAxisLabelX = null, Func<float, string> getAxisLabelY = null){
+    }
+
+
+
+
+    public void ShowGraph(List<int> list, IGraphVisual graphVisual ,int maxVisibleValueAmount = -1 ,Func<int, string> getAxisLabelX = null, Func<float, string> getAxisLabelY = null){
         
         if(getAxisLabelX == null)
         {
@@ -88,16 +144,14 @@ public class GraphPanel : MonoBehaviour{
 
         int xIndex = 0;
 
-        //BarChartVisual barChartVisual = new BarChartVisual(graphContainer, Color.cyan, 0.7f);
-        LineGraphVisual lineGraphVisual = new LineGraphVisual(graphContainer, dotSprite, Color.magenta, Color.white);
-
+       
         for (int i = Mathf.Max(list.Count - maxVisibleValueAmount, 0); i < list.Count; i++) {
 
             float xPosition = xIndex * xSize;
             float yPosition = ((list[i] - yMinimum) / (yMaximum -yMinimum)) * graphHeight;
 
             //gameObjectList.AddRange(barChartVisual.AddGraphVisual(new Vector2(xPosition, yPosition), xSize));
-            gameObjectList.AddRange(lineGraphVisual.AddGraphVisual(new Vector2(xPosition, yPosition), xSize));
+            gameObjectList.AddRange(graphVisual.AddGraphVisual(new Vector2(xPosition, yPosition), xSize));
 
             RectTransform labelX = Instantiate(labelTemplateX);
             labelX.SetParent(graphContainer, false);
@@ -143,14 +197,18 @@ public class GraphPanel : MonoBehaviour{
     }
 
 
-    
+
+
+    public interface IGraphVisual
+    {
+        List<GameObject> AddGraphVisual(Vector2 graphPosition, float graphPositionWidth);
+    }
 
 
 
-    
 
 
-    private class BarChartVisual
+    private class BarChartVisual : IGraphVisual
     {
 
         private RectTransform graphContainer;
@@ -189,7 +247,7 @@ public class GraphPanel : MonoBehaviour{
     }
 
 
-    private class LineGraphVisual
+    private class LineGraphVisual : IGraphVisual
     {
 
         private RectTransform graphContainer;
@@ -237,12 +295,14 @@ public class GraphPanel : MonoBehaviour{
             
         }
 
+      
         private GameObject CreateDot(Vector2 anchoredPosition)
         {
             GameObject gameObject = new GameObject("dot", typeof(Image));
             gameObject.transform.SetParent(graphContainer, false);
             gameObject.GetComponent<Image>().sprite = dotSprite;
             gameObject.GetComponent<Image>().color = dotColor;
+
 
             RectTransform rectTransform = gameObject.GetComponent<RectTransform>();
             rectTransform.anchoredPosition = anchoredPosition;
@@ -278,6 +338,16 @@ public class GraphPanel : MonoBehaviour{
 
     }
 
+
+    public void setChart(int index)
+    {
+        this.indexChart = index;
+    }
+
+    public int getChart()
+    {
+        return this.indexChart;
+    }
 
 
     // Update is called once per frame
