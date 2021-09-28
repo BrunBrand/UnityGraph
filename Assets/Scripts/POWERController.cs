@@ -2,18 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class OnMouse : MonoBehaviour{
-
-
-    void OnMouseOver(){
-        Debug.Log("mouse is over it!");
-    }
-
-    void OnMouseExit()
-    {
-        Debug.Log("mouse has existed the object!");
-    }
-
+public class POWERController : MonoBehaviour
+{
+    // Start is called before the first frame update
     void Start()
     {
         

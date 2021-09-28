@@ -52,19 +52,20 @@ public class GraphPanel : MonoBehaviour{
         List<int> valueList = new
             List<int>() { 5, 160, 16, 75, 30, 22, 17, 15, 13, 17, 25, 37, 40, 36, 33, 100, 22 };
 
-       
+        IGraphVisual graphVisualObj;
 
         gameObjectList = new List<GameObject>();
-        IGraphVisual barChartVisual = new BarChartVisual(graphContainer, Color.green, .8f);
-        IGraphVisual lineChartVisual = new LineGraphVisual(graphContainer, dotSprite, new Color(0,0,0,0.0f), Color.white);
-        ShowGraph(valueList, barChartVisual, -1, (int _i) => "Day " + (_i + 1), (float _f) => "$" + Mathf.RoundToInt(_f));
+
+        graphVisualObj = new BarChartVisual(graphContainer, Color.green, .8f);
 
         transform.Find("barChartBtn").GetComponent<Button>().onClick.AddListener(()=> {
-            SetGraphVisual(barChartVisual);
+            graphVisualObj = new BarChartVisual(graphContainer, Color.green, .8f);
+            SetGraphVisual(graphVisualObj);
         });
 
         transform.Find("lineChartBtn").GetComponent<Button>().onClick.AddListener(()=> {
-            SetGraphVisual(lineChartVisual);
+            graphVisualObj = new LineGraphVisual(graphContainer, dotSprite, new Color(0, 0, 0, 0.0f), Color.white);
+            SetGraphVisual(graphVisualObj);
            
         });
 
@@ -78,7 +79,8 @@ public class GraphPanel : MonoBehaviour{
             SetVisibleAmount(false);
         });
 
-        IGraphVisual graphVisual;
+        ShowGraph(valueList, graphVisualObj, -1, (int _i) => "Day " + (_i + 1), (float _f) => "$" + Mathf.RoundToInt(_f));
+
 
         switch (indexChart)
         {
@@ -174,10 +176,13 @@ public class GraphPanel : MonoBehaviour{
 
 
     private void SetVisibleAmount(bool plus){
+        Debug.Log(graphVisual.GetType());
         if(plus)
         ShowGraph(this.valueList, this.graphVisual, this.maxVisibleValueAmount+1, this.getAxisLabelX, this.getAxisLabelY);
-        else if(maxVisibleValueAmount>1)
+        else if(maxVisibleValueAmount>1 && graphVisual is BarChartVisual)
             ShowGraph(this.valueList, this.graphVisual, this.maxVisibleValueAmount-1, this.getAxisLabelX, this.getAxisLabelY);
+        else if (maxVisibleValueAmount>2 && graphVisual is LineGraphVisual)
+            ShowGraph(this.valueList, this.graphVisual, this.maxVisibleValueAmount - 1, this.getAxisLabelX, this.getAxisLabelY);
     }
 
 
