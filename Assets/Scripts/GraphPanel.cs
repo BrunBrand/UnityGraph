@@ -169,8 +169,7 @@ public class GraphPanel : MonoBehaviour{
 
     }
 
-    private void SetGetAxisLabelY(Func<float, string> getAxisLabelY)
-    {
+    private void SetGetAxisLabelY(Func<float, string> getAxisLabelY){
 
     }
 
