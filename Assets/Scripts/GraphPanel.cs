@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using CodeMonkey.Utils;
+using System.Net;
 
 public class GraphPanel : MonoBehaviour{
 
@@ -25,11 +26,54 @@ public class GraphPanel : MonoBehaviour{
     [SerializeField] Dropdown dropdown;
     GameObject dropdowGameObject;
 
-    private List<int> valueList;
+    private List<double> valueList;
     private IGraphVisual graphVisual;
     private int maxVisibleValueAmount;
     private Func<int, string> getAxisLabelX = null;
-    private Func<float, string> getAxisLabelY = null;
+    private Func<double, string> getAxisLabelY = null;
+
+    //get all data api from this object component script
+    private GameObject submitButton;
+
+
+    private async void CreateGraph()
+    {
+        POWERController powerController = submitButton.GetComponent<POWERController>();
+        List<double> valueList = new List<double>();
+        valueList = await powerController.CallAPI();
+        Debug.Log(valueList.Count);
+        IGraphVisual graphVisualObj;
+
+        gameObjectList = new List<GameObject>();
+
+        graphVisualObj = new BarChartVisual(graphContainer, Color.green, .8f);
+
+        transform.Find("barChartBtn").GetComponent<Button>().onClick.AddListener(() => {
+            graphVisualObj = new BarChartVisual(graphContainer, Color.green, .8f);
+            SetGraphVisual(graphVisualObj);
+        });
+
+        transform.Find("lineChartBtn").GetComponent<Button>().onClick.AddListener(() => {
+            graphVisualObj = new LineGraphVisual(graphContainer, dotSprite, new Color(0, 0, 0, 0.0f), Color.white);
+            SetGraphVisual(graphVisualObj);
+        });
+
+        transform.Find("increaseVisibleAmountBtn").GetComponent<Button>().onClick.AddListener(() =>
+        {
+            SetVisibleAmount(true);
+        });
+
+        transform.Find("decreaseVisibleAmountBtn").GetComponent<Button>().onClick.AddListener(() =>
+        {
+            SetVisibleAmount(false);
+        });
+
+        if (valueList.Count > 0)
+            ShowGraph(valueList, graphVisualObj, -1, (int _i) => "Day " + (_i + 1), (double _f) => "$" + Mathf.RoundToInt((float)_f));
+
+    }
+
+
 
 
     private void Awake(){
@@ -49,85 +93,14 @@ public class GraphPanel : MonoBehaviour{
             //DropdownValueChanged(dropdown);
         });
 
-        List<int> valueList = new
-            List<int>() { 5, 160, 16, 75, 30, 22, 17, 15, 13, 17, 25, 37, 40, 36, 33, 100, 22 };
 
-        IGraphVisual graphVisualObj;
+        submitButton = transform.parent.Find("CallAPI").gameObject;
 
-        gameObjectList = new List<GameObject>();
-
-        graphVisualObj = new BarChartVisual(graphContainer, Color.green, .8f);
-
-        transform.Find("barChartBtn").GetComponent<Button>().onClick.AddListener(()=> {
-            graphVisualObj = new BarChartVisual(graphContainer, Color.green, .8f);
-            SetGraphVisual(graphVisualObj);
-        });
-
-        transform.Find("lineChartBtn").GetComponent<Button>().onClick.AddListener(()=> {
-            graphVisualObj = new LineGraphVisual(graphContainer, dotSprite, new Color(0, 0, 0, 0.0f), Color.white);
-            SetGraphVisual(graphVisualObj);
-           
-        });
-
-        transform.Find("increaseVisibleAmountBtn").GetComponent<Button>().onClick.AddListener(() =>
-        {
-            SetVisibleAmount(true);
-        });
-
-        transform.Find("decreaseVisibleAmountBtn").GetComponent<Button>().onClick.AddListener(() =>
-        {
-            SetVisibleAmount(false);
-        });
-
-        ShowGraph(valueList, graphVisualObj, -1, (int _i) => "Day " + (_i + 1), (float _f) => "$" + Mathf.RoundToInt(_f));
-
-
-        switch (indexChart)
-        {
-
-            case 0:
-                //graphVisual = new LineGraphVisual(graphContainer, dotSprite, Color.green, Color.white);
-                break;
-            case 1:
-                //graphVisual = new BarChartVisual(graphContainer, Color.green, .7f);
-                break;
-            default:
-                //Debug.Log(indexChart);
-                return;
-
-        }
-
-        //ShowGraph(valueList, graphVisual,-1 ,(int _i) => "Day " + (_i + 1), (float _f) => "$" + Mathf.RoundToInt(_f));
-
+        submitButton.GetComponent<Button>().onClick.AddListener(CreateGraph);
+        
 
     }
 
-    /*
-    void DropdownValueChanged(Dropdown change){
-
-        List<int> valueList = new
-            List<int>() { 5, 160, 16, 75, 30, 22, 17, 15, 13, 17, 25, 37, 40, 36, 33, 100, 22 };
-
-        IGraphVisual graphVisual;
-        switch (change.value)
-        {
-
-            case 0:
-                graphVisual = new LineGraphVisual(graphContainer, dotSprite, Color.green, Color.white);
-                break;
-            case 1:
-                graphVisual = new BarChartVisual(graphContainer, Color.green, .7f);
-                break;
-            default:
-                Debug.Log(indexChart);
-                return;
-
-        }
-
-        ShowGraph(valueList, graphVisual, -1, (int _i) => "Day " + (_i + 1), (float _f) => "$" + Mathf.RoundToInt(_f));
-
-
-    }*/
 
     public static void HideTooltip_static()
     {
@@ -175,7 +148,6 @@ public class GraphPanel : MonoBehaviour{
 
 
     private void SetVisibleAmount(bool plus){
-        Debug.Log(graphVisual.GetType());
         if(plus)
         ShowGraph(this.valueList, this.graphVisual, this.maxVisibleValueAmount+1, this.getAxisLabelX, this.getAxisLabelY);
         else if(maxVisibleValueAmount>1 && graphVisual is BarChartVisual)
@@ -193,7 +165,7 @@ public class GraphPanel : MonoBehaviour{
     }
 
 
-    public void ShowGraph(List<int> list, IGraphVisual graphVisual ,int maxVisibleValueAmount = -1 ,Func<int, string> getAxisLabelX = null, Func<float, string> getAxisLabelY = null){
+    public void ShowGraph(List<double> list, IGraphVisual graphVisual ,int maxVisibleValueAmount = -1 ,Func<int, string> getAxisLabelX = null, Func<double, string> getAxisLabelY = null){
         this.valueList = list;
         this.graphVisual = graphVisual;
         
@@ -208,7 +180,7 @@ public class GraphPanel : MonoBehaviour{
 
         if (getAxisLabelY == null)
         {
-            getAxisLabelY = delegate (float _f) { return Mathf.RoundToInt(_f).ToString(); };
+            getAxisLabelY = delegate (double _f) { return Mathf.RoundToInt((float)_f).ToString(); };
         }
 
         if(maxVisibleValueAmount <= 0)
@@ -237,18 +209,18 @@ public class GraphPanel : MonoBehaviour{
 
         
 
-        float yMaximum = list[0];
-        float yMinimum = list[0];
+        double yMaximum = list[0];
+        double yMinimum = list[0];
 
         for(int i = Mathf.Max(list.Count - maxVisibleValueAmount,0); i<list.Count;i++)
         {
-            int value = list[i];
+            double value = list[i];
             if(value > yMaximum) yMaximum = value;
             if (value < yMinimum) yMinimum = value;
         }
 
 
-        float yDifference = yMaximum - yMinimum;
+        double yDifference = yMaximum - yMinimum;
         yDifference = yDifference <= 0 ? 5f : yDifference;
 
         yMaximum += yDifference * .2f;
@@ -264,11 +236,11 @@ public class GraphPanel : MonoBehaviour{
 
         for (int i = Mathf.Max(list.Count - maxVisibleValueAmount, 0); i < list.Count; i++) {
 
-            float xPosition = xIndex * xSize;
-            float yPosition = ((list[i] - yMinimum) / (yMaximum -yMinimum)) * graphHeight;
+            double xPosition = xIndex * xSize;
+            double yPosition = ((list[i] - yMinimum) / (yMaximum -yMinimum)) * graphHeight;
 
             string tooltipText = getAxisLabelY(list[i]);
-            gameObjectList.AddRange(graphVisual.AddGraphVisual(new Vector2(xPosition, yPosition), xSize, tooltipText));
+            gameObjectList.AddRange(graphVisual.AddGraphVisual(new Vector2((float)xPosition, (float)yPosition), xSize, tooltipText));
 
             foreach(GameObject obj in gameObjectList){
                 if(obj.name == "dot")obj.transform.SetAsLastSibling();
@@ -277,7 +249,7 @@ public class GraphPanel : MonoBehaviour{
             RectTransform labelX = Instantiate(labelTemplateX);
             labelX.SetParent(graphContainer, false);
             labelX.gameObject.SetActive(true);
-            labelX.anchoredPosition = new Vector2(xPosition, -10f);
+            labelX.anchoredPosition = new Vector2((float)xPosition, -10f);
             labelX.GetComponent<Text>().text = getAxisLabelX(i);
             gameObjectList.Add(labelX.gameObject);
 

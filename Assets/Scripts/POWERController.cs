@@ -19,16 +19,27 @@ public class POWERController : MonoBehaviour{
     [SerializeField] private int start;
     [SerializeField] private int end;
 
+    private List<DateTime> dateValues = new List<DateTime>();
+    private List<double> valueData = new List<double>();
 
-
-
-
-    POWERController(){
-        
-
-
-
+    public List<DateTime> DateValues
+    {
+        set { dateValues = value; }
+        get { return dateValues; }
     }
+
+    public List<double> ValueData
+    {
+        set { valueData = value; }
+        get { return valueData; }
+    }
+
+    public async Task<List<double>> getValueData()
+    {
+
+        return valueData;
+    }
+    
     
     private async Task<Dictionary<string,double>> GetData()
     {
@@ -50,22 +61,50 @@ public class POWERController : MonoBehaviour{
     }
     
 
-    public async void CallAPI(){
+    public async Task<List<double>> CallAPI(){
         Dictionary<string, double> energyData = await GetData();
         Dictionary<string,double>.KeyCollection keys = energyData.Keys;
+        Dictionary<string, double>.ValueCollection values = energyData.Values;
 
         int index = 0;
-        DateTime[] date = new DateTime[keys.Count];
-        foreach(string dateValue in keys){
-            date[index] = DateTime.ParseExact(dateValue, "yyyyMMdd", CultureInfo.InvariantCulture);
+        
+
+        List<DateTime> dateValues = new List<DateTime>(new DateTime[keys.Count]);
+        List<double> valueData = new List<double>(new double[values.Count]);
+
+
+        foreach(string date in keys){
+            dateValues[index] = DateTime.ParseExact(date, "yyyyMMdd", CultureInfo.InvariantCulture);
             index++;
         }
+        index = 0;
+
+        foreach (double value in values)
+        {
+            valueData[index] = value;
+            index++;
+        }
+
+        foreach (DateTime da in dateValues)
+        {
+            //Debug.Log(da);
+           
+        }
+        foreach (double val in valueData)
+        {
+            //Debug.Log(val);
+
+        }
+        return valueData;
+     
+
+
     }
 
 
     private void Start()
     {
-        gameObject.GetComponent<Button>().onClick.AddListener(CallAPI);
+        //gameObject.GetComponent<Button>().onClick.AddListener(CallAPI);
         
 
     }
